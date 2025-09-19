@@ -42,7 +42,7 @@ function LoginPage() {
             threshold={0.1}
         />
         <SplitText
-            text="UNICON의 갓겜, 지금 투표하세요."
+            text="당신의 갓겜, UNICON의 갓겜."
             className="text-xl font-semibold text-center "
             delay={400}
             duration={2}
