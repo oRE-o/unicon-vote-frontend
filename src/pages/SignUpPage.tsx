@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SplitText from "../components/reactbits/SplitText"; // SplitText 컴포넌트 경로 확인!
 import ErrorMessage from "../components/ErrorMessage"; // 1. ErrorMessage 컴포넌트 import
+
+const API_BASE_URL = "http://localhost:5001";
 
 function SignUpPage() {
   const [userId, setUserId] = useState("");
@@ -10,7 +14,42 @@ function SignUpPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSignUp = () => {
+  const navigate = useNavigate(); // 페이지 이동을 위한 훅
+  const [searchParams] = useSearchParams(); // URL 쿼리 파라미터를 읽기 위한 훅
+
+  useEffect(() => {
+    const uuid = searchParams.get("uuid"); // URL에서 'uuid' 파라미터 추출 (예: /signup?uuid=...)
+
+    if (!uuid) {
+      setError("잘못된 접근입니다. 유효한 QR코드를 이용해주세요.");
+      return;
+    }
+
+    const fetchUserStatus = async () => {
+      // URL 접속 시 바로 사용자 상태를 서버에서 확인
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/auth/status/${uuid}`
+        );
+        const { name, isFirstAccess } = response.data;
+
+        if (!isFirstAccess) {
+          // 이미 등록된 사용자라면 로그인 페이지로 보냄
+          navigate(`/login?uuid=${uuid}`);
+          return;
+        }
+
+        setUserId(uuid);
+        setUserName(name);
+      } catch (err) {
+        setError("사용자 정보를 불러오는 데 실패했습니다.");
+      }
+    };
+
+    fetchUserStatus();
+  }, [searchParams, navigate]);
+
+  const handleSignUp = async () => {
     setError(null);
 
     if (password.length < 4) {
@@ -22,16 +61,29 @@ function SignUpPage() {
       setError("비밀번호가 일치하지 않습니다.");
       return;
     }
+    try {
+      // 백엔드 API 호출
+      await axios.post(`${API_BASE_URL}/api/auth/register`, {
+        uuid: userId,
+        password: password,
+      });
 
-    console.log("회원가입 정보:", { userId, userName, password });
-    alert("회원가입이 완료되었습니다!");
+      // 성공 시
+      alert("회원 설정이 완료되었습니다! 로그인 페이지로 이동합니다.");
+      navigate(`/login?uuid=${userId}`); // 로그인 페이지로 이동
+    } catch (err: any) {
+      // 실패 시 서버에서 보낸 에러 메시지를 표시
+      const errorMessage =
+        err.response?.data?.message || "알 수 없는 오류가 발생했습니다.";
+      setError(errorMessage);
+    }
   };
 
   return (
     <div className="min-h-screen bg-base-100 flex flex-col items-center justify-center gap-3 p-6">
       {/* 텍스트 애니메이션 */}
       <SplitText
-        text="Welcome!"
+        text={`${userName}님, 환영해요!`}
         className="text-5xl font-bold text-center"
         delay={70}
         duration={2}

@@ -1,82 +1,56 @@
 import { useState, useEffect } from "react";
 import type { Game } from "../types";
+import api from "../api";
 import SplitText from "../components/reactbits/SplitText";
 import GameCard from "../components/GameCard";
 import GameList from "../components/GameList"; // 1. GameList 컴포넌트 import
 import Modal from "../components/Modal";
 
-// ... 임시 데이터 및 shuffleArray 함수는 동일 ...
-const initialGames: Game[] = [
-  {
-    id: 1,
-    name: "사이버펑크 2077",
-    description: "미래 도시 나이트 시티에서의 모험",
-    imageUrl:
-      "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp",
-    isLiked: true,
-  },
-  {
-    id: 2,
-    name: "엘든 링",
-    description: "광활한 세계를 탐험하는 판타지 액션 RPG",
-    imageUrl:
-      "https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp",
-    isLiked: true,
-  },
-  {
-    id: 3,
-    name: "스타듀 밸리",
-    description: "평화로운 농장 생활을 즐겨보세요",
-    imageUrl:
-      "https://img.daisyui.com/images/stock/photo-1565035010268-a3845f9df217.webp",
-    isLiked: false,
-  },
-  {
-    id: 4,
-    name: "젤다: 야생의 숨결",
-    description: "끝없는 하이랄 왕국을 탐험하세요",
-    imageUrl:
-      "https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp",
-    isLiked: false,
-  },
-  {
-    id: 5,
-    name: "레드 데드 리뎀션 2",
-    description: "서부 시대의 장대한 서사시",
-    imageUrl:
-      "https://img.daisyui.com/images/stock/photo-1494253109108-2e30c049369b.webp",
-    isLiked: false,
-  },
-  {
-    id: 6,
-    name: "위쳐 3: 와일드 헌트",
-    description: "괴물 사냥꾼 게롤트의 여정",
-    imageUrl:
-      "https://img.daisyui.com/images/stock/photo-1550258987-190a21d4c9a7.webp",
-    isLiked: false,
-  },
-];
-
-const shuffleArray = (array: Game[]) =>
-  [...array].sort(() => Math.random() - 0.5);
-
 function MainPage() {
   const [games, setGames] = useState<Game[]>([]);
-  // 2. searchTerm 상태는 이제 GameList 컴포넌트로 이동했으므로 제거합니다.
-  // const [searchTerm, setSearchTerm] = useState('');
+  const [likedGames, setLikedGames] = useState<Game[]>([]); // 2. '좋아요' 게임 목록 상태 분리
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", message: "" });
-  const userName = "UNICON";
+  const userName = "UNICON"; // 실제로는 로그인 시 받은 사용자 이름으로 대체
+
+  const fetchData = async () => {
+    try {
+      // 두 API를 동시에 호출해서 더 빠르게 데이터를 가져옵니다.
+      const [allGamesRes, likedGamesRes] = await Promise.all([
+        api.get<Game[]>("/api/games"),
+        api.get<Game[]>("/api/games/my-likes"),
+      ]);
+
+      const allGames = allGamesRes.data;
+      const liked = likedGamesRes.data;
+
+      // '좋아요'한 게임 ID 목록을 Set으로 만들어 빠른 조회를 가능하게 합니다.
+      const likedGameIds = new Set(liked.map((g) => g._id));
+
+      // 전체 게임 목록에 isLiked 속성을 동적으로 추가합니다.
+      const gamesWithLikeStatus = allGames.map((game) => ({
+        ...game,
+        isLiked: likedGameIds.has(game._id),
+      }));
+
+      setGames(gamesWithLikeStatus);
+      setLikedGames(liked);
+    } catch (error) {
+      console.error("데이터를 불러오는 데 실패했습니다:", error);
+      // TODO: 에러 처리 UI (예: 토큰 만료 시 로그인 페이지로 리디렉션)
+    }
+  };
 
   useEffect(() => {
-    setGames(shuffleArray(initialGames));
+    fetchData();
   }, []);
 
-  const handleToggleLike = (id: number) => {
-    const likedCount = games.filter((g) => g.isLiked).length;
-    const targetGame = games.find((g) => g.id === id);
+  const handleToggleLike = async (gameId: string) => {
+    const targetGame = games.find((g) => g._id === gameId);
+    if (!targetGame) return;
 
-    if (likedCount >= 2 && !targetGame?.isLiked) {
+    // 클라이언트 단에서 먼저 UI 피드백을 위한 검사
+    if (likedGames.length >= 2 && !targetGame.isLiked) {
       setModalContent({
         title: "UNICON에 갓겜은 많지만...",
         message: "투표는 최대 2개까지 가능합니다.",
@@ -85,15 +59,23 @@ function MainPage() {
       return;
     }
 
-    setGames(
-      games.map((game) =>
-        game.id === id ? { ...game, isLiked: !game.isLiked } : game
-      )
-    );
-  };
+    try {
+      if (targetGame.isLiked) {
+        // 좋아요 취소 API 호출
+        await api.delete(`/api/games/${gameId}/like`);
+      } else {
+        // 좋아요 추가 API 호출
+        await api.post(`/api/games/${gameId}/like`);
+      }
 
-  const likedGames = games.filter((game) => game.isLiked);
-  // 3. filteredGames 로직도 GameList로 이동했으므로 제거합니다.
+      // 5. 요청 성공 후, 서버의 최신 데이터를 다시 불러와 화면을 동기화합니다.
+      await fetchData();
+    } catch (error: any) {
+      const message = error.response?.data?.message || "오류가 발생했습니다.";
+      setModalContent({ title: "요청 실패", message });
+      setIsModalOpen(true);
+    }
+  };
 
   return (
     <div className="p-6 md:p-10 bg-base-200 min-h-screen">
@@ -120,9 +102,9 @@ function MainPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {likedGames.map((game) => (
               <GameCard
-                key={game.id}
-                game={game}
-                onToggleLike={handleToggleLike}
+                key={game._id} // 6. key를 _id로 변경
+                game={{ ...game, isLiked: true }} // 이 목록의 게임은 항상 isLiked가 true
+                onToggleLike={() => handleToggleLike(game._id)} // 7. id 전달 방식 변경
               />
             ))}
           </div>

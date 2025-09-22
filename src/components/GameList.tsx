@@ -1,11 +1,10 @@
 import { useState } from "react";
 import type { Game } from "../types";
 import GameCard from "./GameCard";
-import Modal from "./Modal";
 
 interface GameListProps {
   games: Game[];
-  onToggleLike: (id: number) => void;
+  onToggleLike: (id: string) => void;
 }
 
 function GameList({ games, onToggleLike }: GameListProps) {
@@ -32,7 +31,11 @@ function GameList({ games, onToggleLike }: GameListProps) {
       <h2 className="text-2xl font-bold mb-4">🎲 전체 게임 목록</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredGames.map((game) => (
-          <GameCard key={game.id} game={game} onToggleLike={onToggleLike} />
+          <GameCard
+            key={game._id} // key를 _id로 변경
+            game={game}
+            onToggleLike={onToggleLike} // onToggleLike 함수를 그대로 전달
+          />
         ))}
       </div>
     </section>

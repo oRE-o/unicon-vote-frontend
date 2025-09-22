@@ -1,26 +1,77 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom"; // 라우터 훅 import
+import axios from "axios"; // axios import
 import SplitText from "../components/reactbits/SplitText";
 import ErrorMessage from "../components/ErrorMessage"; // 1. ErrorMessage 컴포넌트 import
 
+const API_BASE_URL = "http://localhost:5001";
+
 function LoginPage() {
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState(""); // UUID
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const idFromQr = "scanned_user_id"; // 임시 ID
-    setUserId(idFromQr);
-    setUserName("scanned_user_name"); // 임시 이름
-  }, []);
+    const uuid = searchParams.get("uuid");
 
-  const handleLogin = () => {
-    if (password !== "game") {
-      setError("비밀번호가 일치하지 않습니다.");
+    if (!uuid) {
+      setError("잘못된 접근입니다. 유효한 QR코드를 이용해주세요.");
       return;
     }
-    console.log(`로그인 시도:`, { id: userId, password: password });
-    alert(`${userName}님, 환영합니다!`);
+
+    const fetchUserStatus = async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/auth/status/${uuid}`
+        );
+        const { name, isFirstAccess } = response.data;
+
+        // 만약 첫 접속 사용자라면, 비밀번호 설정 페이지로 보냄
+        if (isFirstAccess) {
+          navigate(`/signup?uuid=${uuid}`);
+          return;
+        }
+
+        setUserId(uuid);
+        setUserName(name);
+      } catch (err) {
+        setError("사용자 정보를 불러오는 데 실패했습니다.");
+        navigate("/"); // 에러 발생 시 메인 페이지 등으로 이동
+      }
+    };
+
+    fetchUserStatus();
+  }, [searchParams, navigate]);
+
+  const handleLogin = async () => {
+    // async 키워드 추가
+    setError(null);
+
+    if (!password) {
+      setError("비밀번호를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+        uuid: userId,
+        password: password,
+      });
+
+      // 3. 로그인 성공 시 서버가 보내준 토큰(JWT)을 저장
+      const { token } = response.data;
+      localStorage.setItem("authToken", token); // localStorage에 토큰 저장
+
+      alert(`${userName}님, 환영합니다!`);
+      navigate("/games"); // 로그인 후 게임 목록 페이지 등으로 이동
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "로그인에 실패했습니다.";
+      setError(errorMessage);
+    }
   };
 
   return (
@@ -77,6 +128,8 @@ function LoginPage() {
             className="input input-bordered"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            // Enter 키로 로그인 가능하도록 추가
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             required
           />
           {error && <ErrorMessage message={error} />}

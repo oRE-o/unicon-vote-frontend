@@ -2,7 +2,7 @@ import type { Game } from "../types";
 
 interface GameCardProps {
   game: Game;
-  onToggleLike: (id: number) => void; // 하트 버튼 클릭 시 호출될 함수
+  onToggleLike: (id: string) => void; // 하트 버튼 클릭 시 호출될 함수
 }
 
 function GameCard({ game, onToggleLike }: GameCardProps) {
@@ -22,7 +22,7 @@ function GameCard({ game, onToggleLike }: GameCardProps) {
           {/* 하트 버튼: isLiked 상태에 따라 모양과 색이 바뀜 */}
           <button
             className="btn btn-ghost btn-circle"
-            onClick={() => onToggleLike(game.id)}
+            onClick={() => onToggleLike(game._id)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
