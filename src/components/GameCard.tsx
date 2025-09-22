@@ -1,4 +1,4 @@
-import type { Game } from '../types';
+import type { Game } from "../types";
 
 interface GameCardProps {
   game: Game;
@@ -9,7 +9,11 @@ function GameCard({ game, onToggleLike }: GameCardProps) {
   return (
     <div className="card bg-base-100 shadow-xl transition-transform duration-300 hover:scale-105">
       <figure>
-        <img src={game.imageUrl} alt={game.name} className="h-56 w-full object-cover" />
+        <img
+          src={game.imageUrl}
+          alt={game.name}
+          className="h-56 w-full object-cover"
+        />
       </figure>
       <div className="card-body">
         <h2 className="card-title">{game.name}</h2>
@@ -22,8 +26,10 @@ function GameCard({ game, onToggleLike }: GameCardProps) {
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`h-6 w-6 ${game.isLiked ? 'text-red-500' : 'text-gray-400'}`}
-              fill={game.isLiked ? 'currentColor' : 'none'}
+              className={`h-6 w-6 ${
+                game.isLiked ? "text-red-500" : "text-gray-400"
+              }`}
+              fill={game.isLiked ? "currentColor" : "none"}
               viewBox="0 0 24 24"
               stroke="currentColor"
             >

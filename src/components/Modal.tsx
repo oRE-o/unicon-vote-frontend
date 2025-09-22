@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -22,14 +22,22 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
   }, [isOpen]);
 
   // 모달 외부 클릭 시 닫기
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement, MouseEvent>) => {
+  const handleBackdropClick = (
+    event: React.MouseEvent<HTMLDialogElement, MouseEvent>
+  ) => {
     if (event.currentTarget === event.target) {
-        onClose();
+      onClose();
     }
   };
 
   return (
-    <dialog ref={modalRef} id="my_modal_1" className="modal" onClose={onClose} onClick={handleBackdropClick}>
+    <dialog
+      ref={modalRef}
+      id="my_modal_1"
+      className="modal"
+      onClose={onClose}
+      onClick={handleBackdropClick}
+    >
       <div className="modal-box">
         <h3 className="font-bold text-lg">{title}</h3>
         <div className="py-4">{children}</div>
@@ -44,5 +52,3 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
 }
 
 export default Modal;
-
-
