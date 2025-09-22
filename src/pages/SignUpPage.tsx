@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import dotenv from 'dotenv';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import SplitText from "../components/reactbits/SplitText"; // SplitText 컴포넌트 경로 확인!
 import ErrorMessage from "../components/ErrorMessage"; // 1. ErrorMessage 컴포넌트 import
 
-const API_BASE_URL = "http://localhost:5001";
+dotenv.config();
+
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000"; // 환경변수에서 API_BASE_URL 읽기
 
 function SignUpPage() {
   const [userId, setUserId] = useState("");
