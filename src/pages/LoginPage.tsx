@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom"; // 라우터 훅 import
 import axios from "axios"; // axios import
-import dotenv from "dotenv";
 import SplitText from "../components/reactbits/SplitText";
 import ErrorMessage from "../components/ErrorMessage"; // 1. ErrorMessage 컴포넌트 import
 
-dotenv.config();
-
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000"; // 환경변수에서 API_BASE_URL 읽기
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"; // 환경변수에서 API_BASE_URL 읽기
 
 function LoginPage() {
   const [userId, setUserId] = useState(""); // UUID
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [uuidError, setUuidError] = useState(false); // UUID 관련 에러 상태
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -22,6 +21,7 @@ function LoginPage() {
 
     if (!uuid) {
       setError("잘못된 접근입니다. 유효한 QR코드를 이용해주세요.");
+      setUuidError(true);
       return;
     }
 
@@ -37,12 +37,10 @@ function LoginPage() {
           navigate(`/signup?uuid=${uuid}`);
           return;
         }
-
         setUserId(uuid);
         setUserName(name);
       } catch (err) {
         setError("사용자 정보를 불러오는 데 실패했습니다.");
-        navigate("/"); // 에러 발생 시 메인 페이지 등으로 이동
       }
     };
 
@@ -69,7 +67,7 @@ function LoginPage() {
       localStorage.setItem("authToken", token); // localStorage에 토큰 저장
 
       alert(`${userName}님, 환영합니다!`);
-      navigate("/games"); // 로그인 후 게임 목록 페이지 등으로 이동
+      navigate("/main"); // 로그인 후 게임 목록 페이지 등으로 이동
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "로그인에 실패했습니다.";
@@ -137,7 +135,11 @@ function LoginPage() {
           />
           {error && <ErrorMessage message={error} />}
 
-          <button className="btn btn-neutral mt-4" onClick={handleLogin}>
+          <button
+            className="btn btn-neutral mt-4"
+            onClick={handleLogin}
+            disabled={!password || uuidError}
+          >
             로그인
           </button>
         </fieldset>

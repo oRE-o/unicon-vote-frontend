@@ -1,12 +1,12 @@
 // src/api.ts
 import axios from "axios";
-import dotenv from "dotenv";
 
-dotenv.config();
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 // Axios 인스턴스 생성
 const api = axios.create({
-  baseURL: process.env.API_BASE_URL,
+  baseURL: API_BASE_URL,
 });
 
 // 요청 인터셉터: 모든 요청이 보내지기 전에 실행됩니다.

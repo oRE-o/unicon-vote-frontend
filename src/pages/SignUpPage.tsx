@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import dotenv from 'dotenv';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import SplitText from "../components/reactbits/SplitText"; // SplitText 컴포넌트 경로 확인!
 import ErrorMessage from "../components/ErrorMessage"; // 1. ErrorMessage 컴포넌트 import
 
-dotenv.config();
-
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000"; // 환경변수에서 API_BASE_URL 읽기
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"; // 환경변수에서 API_BASE_URL 읽기
 
 function SignUpPage() {
   const [userId, setUserId] = useState("");
@@ -16,15 +14,22 @@ function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [uuidError, setUuidError] = useState(false); // UUID 관련 에러 상태
   const navigate = useNavigate(); // 페이지 이동을 위한 훅
   const [searchParams] = useSearchParams(); // URL 쿼리 파라미터를 읽기 위한 훅
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [welcomeMessage2, setWelcomeMessage2] = useState(
+    "새로운 계정을 만들어 시작해보세요."
+  );
 
   useEffect(() => {
     const uuid = searchParams.get("uuid"); // URL에서 'uuid' 파라미터 추출 (예: /signup?uuid=...)
 
     if (!uuid) {
       setError("잘못된 접근입니다. 유효한 QR코드를 이용해주세요.");
+      setUuidError(true);
+      setWelcomeMessage("뭔가 이상해요!");
+      setWelcomeMessage2("유효한 QR코드를 이용해주세요.");
       return;
     }
 
@@ -44,6 +49,7 @@ function SignUpPage() {
 
         setUserId(uuid);
         setUserName(name);
+        setWelcomeMessage(`${name}님, 환영해요!`);
       } catch (err) {
         setError("사용자 정보를 불러오는 데 실패했습니다.");
       }
@@ -86,7 +92,7 @@ function SignUpPage() {
     <div className="min-h-screen bg-base-100 flex flex-col items-center justify-center gap-3 p-6">
       {/* 텍스트 애니메이션 */}
       <SplitText
-        text={`${userName}님, 환영해요!`}
+        text={welcomeMessage}
         className="text-5xl font-bold text-center"
         delay={70}
         duration={2}
@@ -96,7 +102,7 @@ function SignUpPage() {
         to={{ opacity: 1, y: 0 }}
       />
       <SplitText
-        text="새로운 계정을 만들어 시작해보세요."
+        text={welcomeMessage2}
         className="text-xl font-semibold text-center"
         delay={400}
         duration={2}
@@ -170,7 +176,7 @@ function SignUpPage() {
         <button
           onClick={handleSignUp}
           className="btn btn-neutral w-full mt-4 mb-4"
-          disabled={!agreed}
+          disabled={!agreed || !password || !confirmPassword || uuidError} // 약관 동의 및 비밀번호 입력 여부 검사
         >
           회원 설정 완료
         </button>

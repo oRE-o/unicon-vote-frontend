@@ -5,15 +5,35 @@ import SplitText from "../components/reactbits/SplitText";
 import GameCard from "../components/GameCard";
 import GameList from "../components/GameList"; // 1. GameList 컴포넌트 import
 import Modal from "../components/Modal";
+import { jwtDecode } from "jwt-decode"; // 1. jwt-decode 임포트
+
+interface DecodedToken {
+  name: string;
+  uuid: string;
+  role: "user" | "admin";
+  iat: number;
+  exp: number;
+}
 
 function MainPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [likedGames, setLikedGames] = useState<Game[]>([]); // 2. '좋아요' 게임 목록 상태 분리
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", message: "" });
-  const userName = "UNICON"; // 실제로는 로그인 시 받은 사용자 이름으로 대체
+  const [userName, setUserName] = useState("...");
 
   const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        const decodedToken: DecodedToken = jwtDecode(token);
+        setUserName(decodedToken.name); // 토큰에서 이름 추출 후 state 업데이트
+      }
+    } catch (error) {
+      console.error("Invalid token:", error);
+      // 토큰이 유효하지 않을 경우 로그인 페이지로 보내는 등의 처리를 할 수 있습니다.
+    }
+
     try {
       // 두 API를 동시에 호출해서 더 빠르게 데이터를 가져옵니다.
       const [allGamesRes, likedGamesRes] = await Promise.all([
