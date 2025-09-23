@@ -10,6 +10,7 @@ const API_BASE_URL =
 function LoginPage() {
   const [userId, setUserId] = useState(""); // UUID
   const [userName, setUserName] = useState("");
+  const [clubName, setClubName] = useState(""); // 1. club state 추가
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [uuidError, setUuidError] = useState(false); // UUID 관련 에러 상태
@@ -30,7 +31,7 @@ function LoginPage() {
         const response = await axios.get(
           `${API_BASE_URL}/api/auth/status/${uuid}`
         );
-        const { name, isFirstAccess } = response.data;
+        const { name, club, isFirstAccess } = response.data; // 2. club 정보 받기
 
         // 만약 첫 접속 사용자라면, 비밀번호 설정 페이지로 보냄
         if (isFirstAccess) {
@@ -39,6 +40,7 @@ function LoginPage() {
         }
         setUserId(uuid);
         setUserName(name);
+        if (club) setClubName(club); // 3. state에 club 정보 저장
       } catch (err) {
         setError("사용자 정보를 불러오는 데 실패했습니다.");
       }
@@ -119,6 +121,13 @@ function LoginPage() {
           <input
             type="text"
             value={userName}
+            className="input input-bordered input-disabled"
+            disabled
+          />
+          <label className="label">소속 동아리</label>
+          <input // 4. club 정보 표시 input 추가
+            type="text"
+            value={clubName || "관람객"}
             className="input input-bordered input-disabled"
             disabled
           />

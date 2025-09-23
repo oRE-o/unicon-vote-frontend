@@ -10,6 +10,7 @@ const API_BASE_URL =
 function SignUpPage() {
   const [userId, setUserId] = useState("");
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState(""); // 1. role state 추가
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -39,7 +40,7 @@ function SignUpPage() {
         const response = await axios.get(
           `${API_BASE_URL}/api/auth/status/${uuid}`
         );
-        const { name, isFirstAccess } = response.data;
+        const { name, role, isFirstAccess } = response.data;
 
         if (!isFirstAccess) {
           // 이미 등록된 사용자라면 로그인 페이지로 보냄
@@ -49,7 +50,12 @@ function SignUpPage() {
 
         setUserId(uuid);
         setUserName(name);
-        setWelcomeMessage(`${name}님, 환영해요!`);
+        setUserRole(role); // 2. role state 설정
+        if (role === "guest") {
+          setWelcomeMessage("방문객님, 환영해요!");
+        } else {
+          setWelcomeMessage(`${name}님, 환영해요!`);
+        }
       } catch (err) {
         setError("사용자 정보를 불러오는 데 실패했습니다.");
       }
@@ -75,6 +81,7 @@ function SignUpPage() {
       await axios.post(`${API_BASE_URL}/api/auth/register`, {
         uuid: userId,
         password: password,
+        name: userName,
       });
 
       // 성공 시
@@ -129,11 +136,13 @@ function SignUpPage() {
         <label className="label mt-2">이름</label>
         <input
           type="text"
-          placeholder="이름"
+          placeholder={
+            userRole === "guest" ? "방문객" : userName
+          }
           className="input input-bordered w-full"
-          value={userName}
+          value={""}
           onChange={(e) => setUserName(e.target.value)}
-          required
+          disabled={userRole === "user"} // guest인 경우 이름 변경 불가
         />
 
         <label className="label  mt-2">비밀번호</label>

@@ -1,13 +1,31 @@
 import type { Game } from "../types";
 
+// 메달 아이콘을 매핑하는 객체
+const MEDAL_ICONS: Record<string, string> = {
+  gold: "🥇",
+  silver: "🥈",
+  bronze: "🥉",
+};
+
 interface GameCardProps {
   game: Game;
-  onToggleLike: (id: string) => void; // 하트 버튼 클릭 시 호출될 함수
+  userClub?: string; // 1. userClub prop 추가
+  voteCount: number; // 이 게임이 받은 총 투표(메달) 수
+  myVotes: Record<string, string>; // 내가 이 게임에 준 메달들 { criterion: medal }
+  onVoteClick: () => void; // '투표하기' 버튼 클릭 시 호출될 함수
 }
 
-function GameCard({ game, onToggleLike }: GameCardProps) {
+function GameCard({
+  game,
+  userClub,
+  voteCount,
+  myVotes,
+  onVoteClick,
+}: GameCardProps) {
+  const isMyClubGame = userClub && game.club && userClub === game.club;
+
   return (
-    <div className="card bg-base-100 shadow-xl transition-transform duration-300 hover:scale-105">
+    <div className="card bg-base-100 shadow-xl transition-transform duration-300 hover:scale-105 flex flex-col">
       <figure>
         <img
           src={game.imageUrl}
@@ -15,31 +33,42 @@ function GameCard({ game, onToggleLike }: GameCardProps) {
           className="h-56 w-full object-cover"
         />
       </figure>
-      <div className="card-body">
+      <div className="card-body flex-grow">
         <h2 className="card-title">{game.name}</h2>
-        <p>{game.description}</p>
-        <div className="card-actions justify-end">
-          {/* 하트 버튼: isLiked 상태에 따라 모양과 색이 바뀜 */}
+        {/* --- 동아리 정보 표시 --- */}
+        {game.club && (
+          <div className="badge badge-secondary mb-2 self-start">
+            {game.club}
+          </div>
+        )}
+        {/* --- 게임 설명 --- */}
+        <p className="flex-grow">{game.description}</p>
+
+        {/* --- 내가 준 메달 표시 --- */}
+        <div className="my-2 flex items-center gap-2">
+          <span className="font-semibold">나의 투표:</span>
+          {Object.keys(myVotes).length > 0 ? (
+            Object.values(myVotes).map((medal) => (
+              <span key={medal} className="text-2xl">
+                {MEDAL_ICONS[medal]}
+              </span>
+            ))
+          ) : (
+            <span className="text-sm text-base-content/60">아직 없음</span>
+          )}
+        </div>
+
+        <div className="card-actions justify-between items-center mt-2">
+          {/* --- 총 투표 수 표시 --- */}
+          <div className="font-bold">🏆 총 {voteCount}개 메달</div>
+          {/* --- 투표하기 버튼 --- */}
           <button
-            className="btn btn-ghost btn-circle"
-            onClick={() => onToggleLike(game._id)}
+            className="btn btn-primary"
+            onClick={onVoteClick}
+            disabled={!!isMyClubGame} // 2. disabled 속성 추가
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-6 w-6 ${
-                game.isLiked ? "text-red-500" : "text-gray-400"
-              }`}
-              fill={game.isLiked ? "currentColor" : "none"}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
+            {isMyClubGame ? "투표 불가" : "투표하기"}{" "}
+            {/* 3. 버튼 텍스트 변경 */}
           </button>
         </div>
       </div>
