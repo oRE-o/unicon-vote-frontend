@@ -53,6 +53,25 @@ function AdminPage() {
       alert("사용자 생성에 실패했습니다.");
     }
   };
+  const handleResetPassword = async (uuid: string) => {
+    if (
+      window.confirm(
+        "정말 이 사용자의 비밀번호를 초기화하시겠습니까?\n초기화 후에는 QR코드로 다시 접속하여 비밀번호를 설정해야 합니다."
+      )
+    ) {
+      try {
+        await api.patch(`/api/admin/users/${uuid}/reset-password`);
+        alert("비밀번호가 초기화되었습니다.");
+      } catch (error) {
+        console.error("비밀번호 초기화 실패:", error);
+        alert("비밀번호 초기화에 실패했습니다.");
+      }
+    }
+  };
+
+  const showQrCode = (uuid: string) => {
+    setQrModalUuid(uuid);
+  };
 
   const handleDeleteUser = async (uuid: string) => {
     if (window.confirm("정말 이 사용자를 삭제하시겠습니까?")) {
@@ -157,7 +176,28 @@ function AdminPage() {
                       {user.role}
                     </span>
                   </td>
-                  <td className="flex gap-2">{/* ... 버튼들 ... */}</td>
+                  <td className="flex gap-2">
+                    <td className="flex flex-wrap gap-2">
+                      <button
+                        className="btn btn-sm btn-info"
+                        onClick={() => showQrCode(user.uuid)}
+                      >
+                        QR 보기
+                      </button>
+                      <button
+                        className="btn btn-sm btn-warning"
+                        onClick={() => handleResetPassword(user.uuid)}
+                      >
+                        비번 초기화
+                      </button>
+                      <button
+                        className="btn btn-sm btn-error"
+                        onClick={() => handleDeleteUser(user.uuid)}
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </td>
                 </tr>
               ))}
             </tbody>
